@@ -8,34 +8,31 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install Godot 3.5.2 and HTML5 export templates
+      - name: Install Godot 3.5.2 editor, Xvfb, and HTML5 export templates
         shell: bash
         run: |
           set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes xvfb
           godot_dir="${RUNNER_TEMP}/godot"
           templates_dir="${RUNNER_TEMP}/godot-templates"
           template_install_dir="${HOME}/.local/share/godot/templates/3.5.2.stable"
           mkdir -p "$godot_dir" "$templates_dir" "$template_install_dir"
 
           curl --fail --location --retry 5 --retry-all-errors \
-            "https://github.com/godotengine/godot-builds/releases/download/3.5.2-stable/Godot_v3.5.2-stable_linux_headless.64.zip" \
+            "https://github.com/godotengine/godot-builds/releases/download/3.5.2-stable/Godot_v3.5.2-stable_x11.64.zip" \
             --output "${godot_dir}/godot.zip"
           unzip -q "${godot_dir}/godot.zip" -d "$godot_dir"
 
@@ -50,22 +47,35 @@ jobs:
         working-directory: SourceCode
         run: |
           set -euo pipefail
-          godot="${RUNNER_TEMP}/godot/Godot_v3.5.2-stable_linux_headless.64"
+          godot="${RUNNER_TEMP}/godot/Godot_v3.5.2-stable_x11.64"
           chmod +x "$godot"
           "$godot" --version
-          "$godot" --path . --editor --quit
+          echo "Importing project resources..."
+          xvfb-run --auto-servernum "$godot" --verbose --path . --editor --quit
           mkdir -p ../Exports/HTML
-          "$godot" --path . --export "HTML5" ../Exports/HTML/index.html
+          echo "Exporting HTML5 preset..."
+          xvfb-run --auto-servernum "$godot" --verbose --path . --export "HTML5" ../Exports/HTML/index.html
           touch ../Exports/HTML/.nojekyll
           test -s ../Exports/HTML/index.html
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: Exports/HTML
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
 
       - name: Deploy to GitHub Pages
         id: deployment
