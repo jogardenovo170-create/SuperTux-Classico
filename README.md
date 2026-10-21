@@ -8,6 +8,12 @@ Stable releases of SuperTux Classic for major platforms can be found at: https:/
 
 Alternatively, you can find releases of the game on itch.io: https://alzter-s.itch.io/supertux-classic
 
+## Play in a web browser
+
+The HTML5 version is published at [Play SuperTux Classic](https://jogardenovo170-create.github.io/SuperTux-Classico/). On iPhone, open the link in Safari; use **Share → Add to Home Screen** to add a shortcut. This is a web game running in Safari, not a native iOS app or signed IPA.
+
+The web build is exported with Godot 3.5.2 and deployed to GitHub Pages when changes are pushed to `main`. A deployment can also be started manually from the Actions tab.
+
 ## Creating your own content
 Would you like to create your own levels for SuperTux Classic?
 What about replacing the game's textures or sounds, or even creating custom enemy types or powerups?

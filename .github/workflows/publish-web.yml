@@ -1,0 +1,74 @@
+name: Publish web game
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Godot 3.5.2 and HTML5 export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot_dir="${RUNNER_TEMP}/godot"
+          templates_dir="${RUNNER_TEMP}/godot-templates"
+          template_install_dir="${HOME}/.local/share/godot/templates/3.5.2.stable"
+          mkdir -p "$godot_dir" "$templates_dir" "$template_install_dir"
+
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://github.com/godotengine/godot-builds/releases/download/3.5.2-stable/Godot_v3.5.2-stable_linux_headless.64.zip" \
+            --output "${godot_dir}/godot.zip"
+          unzip -q "${godot_dir}/godot.zip" -d "$godot_dir"
+
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://github.com/godotengine/godot-builds/releases/download/3.5.2-stable/Godot_v3.5.2-stable_export_templates.tpz" \
+            --output "${RUNNER_TEMP}/godot-export-templates.tpz"
+          unzip -q "${RUNNER_TEMP}/godot-export-templates.tpz" -d "$templates_dir"
+          cp -a "${templates_dir}/templates/." "$template_install_dir/"
+
+      - name: Import project resources and export HTML5
+        shell: bash
+        working-directory: SourceCode
+        run: |
+          set -euo pipefail
+          godot="${RUNNER_TEMP}/godot/Godot_v3.5.2-stable_linux_headless.64"
+          chmod +x "$godot"
+          "$godot" --version
+          "$godot" --path . --editor --quit
+          mkdir -p ../Exports/HTML
+          "$godot" --path . --export "HTML5" ../Exports/HTML/index.html
+          touch ../Exports/HTML/.nojekyll
+          test -s ../Exports/HTML/index.html
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: Exports/HTML
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
