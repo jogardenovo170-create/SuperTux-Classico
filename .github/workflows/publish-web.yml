@@ -20,7 +20,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install Godot 3.5.2 and HTML5 export templates
+      - name: Install Godot 3.5.2 editor and HTML5 export templates
         shell: bash
         run: |
           set -euo pipefail
@@ -30,7 +30,7 @@ jobs:
           mkdir -p "$godot_dir" "$templates_dir" "$template_install_dir"
 
           curl --fail --location --retry 5 --retry-all-errors \
-            "https://github.com/godotengine/godot-builds/releases/download/3.5.2-stable/Godot_v3.5.2-stable_linux_headless.64.zip" \
+            "https://github.com/godotengine/godot-builds/releases/download/3.5.2-stable/Godot_v3.5.2-stable_x11.64.zip" \
             --output "${godot_dir}/godot.zip"
           unzip -q "${godot_dir}/godot.zip" -d "$godot_dir"
 
@@ -45,7 +45,7 @@ jobs:
         working-directory: SourceCode
         run: |
           set -euo pipefail
-          godot="${RUNNER_TEMP}/godot/Godot_v3.5.2-stable_linux_headless.64"
+          godot="${RUNNER_TEMP}/godot/Godot_v3.5.2-stable_x11.64"
           chmod +x "$godot"
           "$godot" --version
           echo "Importing project resources..."
