@@ -53,9 +53,11 @@ jobs:
           godot="${RUNNER_TEMP}/godot/Godot_v3.5.2-stable_linux_headless.64"
           chmod +x "$godot"
           "$godot" --version
-          "$godot" --path . --editor --quit
+          echo "Importing project resources..."
+          "$godot" --headless --verbose --path . --editor --quit
           mkdir -p ../Exports/HTML
-          "$godot" --path . --export "HTML5" ../Exports/HTML/index.html
+          echo "Exporting HTML5 preset..."
+          "$godot" --headless --verbose --path . --export "HTML5" ../Exports/HTML/index.html
           touch ../Exports/HTML/.nojekyll
           test -s ../Exports/HTML/index.html
 
