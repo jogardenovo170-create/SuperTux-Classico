@@ -20,10 +20,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install Godot 3.5.2 editor and HTML5 export templates
+      - name: Install Godot 3.5.2 editor, Xvfb, and HTML5 export templates
         shell: bash
         run: |
           set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes xvfb
           godot_dir="${RUNNER_TEMP}/godot"
           templates_dir="${RUNNER_TEMP}/godot-templates"
           template_install_dir="${HOME}/.local/share/godot/templates/3.5.2.stable"
@@ -49,10 +51,10 @@ jobs:
           chmod +x "$godot"
           "$godot" --version
           echo "Importing project resources..."
-          "$godot" --headless --verbose --path . --editor --quit
+          xvfb-run --auto-servernum "$godot" --verbose --path . --editor --quit
           mkdir -p ../Exports/HTML
           echo "Exporting HTML5 preset..."
-          "$godot" --headless --verbose --path . --export "HTML5" ../Exports/HTML/index.html
+          xvfb-run --auto-servernum "$godot" --verbose --path . --export "HTML5" ../Exports/HTML/index.html
           touch ../Exports/HTML/.nojekyll
           test -s ../Exports/HTML/index.html
 
